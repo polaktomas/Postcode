@@ -1,0 +1,14 @@
+{
+    "name": "tomaspolak/postcode",
+    "license": "proprietary",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Postcode\\": "src/"
+        }
+    },
+    "require": {
+        "symfony/console": "^3.3",
+        "tuscanicz/soap": "^4.2"
+    }
+}
