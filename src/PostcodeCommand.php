@@ -41,7 +41,14 @@ class PostcodeCommand extends Command
 
                 foreach ($towns as $town){
                     $postcodes = $this->getUKLocationByTown($soapClient, $town);
-                    $output->writeln($town . ": " . implode(", ",$postcodes));
+
+                    if (count($postcodes) > 0){
+                        $output->writeln($town . ": " . implode(", ",$postcodes));
+                    } else {
+                        $warningMessages = array('There are no postcodes for town ' . $town);
+                        $formattedBlock = $formatter->formatBlock($warningMessages, 'comment');
+                        $output->writeln($formattedBlock);
+                    }
                 }
             } catch (\SoapFault $e){
                 $errorMessages = array('Connection to soap wasnt established.');
