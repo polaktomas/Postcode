@@ -13,12 +13,25 @@ use BeSimple\SoapClient\SoapClientBuilder;
 use BeSimple\SoapClient\SoapClientOptionsBuilder;
 use BeSimple\SoapCommon\SoapOptionsBuilder;
 
+/**
+ * Symfony command for testing SOAP
+ * search postcodes by given towns name in UK.
+ *
+ * @author Tomas Polak <polak.tomas@gmail.com>
+ */
 class PostcodeCommand extends Command
 {
+    // Remote soap resource
     const REMOTE_WSDL_UK = 'http://www.webservicex.net/uklocation.asmx?WSDL';
+
+    // Limits for towns in args
     const TOWNS_LIMIT_MIN = 2;
     const TOWNS_LIMIT_MAX = 3;
 
+    /**
+     * Configure postcode command.
+     * Adds towns in array args.
+     */
     protected function configure()
     {
         $this->setName("postcode")
@@ -30,6 +43,11 @@ class PostcodeCommand extends Command
                   );
     }
 
+    /**
+     * Executes postcode command.
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $towns = $input->getArgument('Towns');
@@ -43,19 +61,23 @@ class PostcodeCommand extends Command
                     $postcodes = $this->getUKLocationByTown($soapClient, $town);
 
                     if (count($postcodes) > 0){
+                        // Sucessful postcodes for town.
                         $output->writeln($town . ": " . implode(", ",$postcodes));
                     } else {
+                        // Postcodes not found.
                         $warningMessages = array('There are no postcodes for town ' . $town);
                         $formattedBlock = $formatter->formatBlock($warningMessages, 'comment');
                         $output->writeln($formattedBlock);
                     }
                 }
             } catch (\SoapFault $e){
+                // Handling connection error.
                 $errorMessages = array('Connection to soap wasnt established.');
                 $formattedBlock = $formatter->formatBlock($errorMessages, 'error');
                 $output->writeln($formattedBlock);
             }
         } else {
+            // Count of town is out of limits.
             $errorMessages = array(
                 'You need to enter from ' .
                 self::TOWNS_LIMIT_MIN .
@@ -68,6 +90,10 @@ class PostcodeCommand extends Command
         }
     }
 
+    /**
+     * Gets soap client with postcode resource.
+     * @return SoapClient
+     */
     private function getPostcodeSoapClient()
     {
         $soapClientBuilder = new SoapClientBuilder();
@@ -78,12 +104,22 @@ class PostcodeCommand extends Command
         return $soapClient;
     }
 
+    /**
+     * Gets postcode for given town.
+     * @param SoapClient $soapClient
+     * @param String $town
+     * @return Array
+     */
     private function getUKLocationByTown($soapClient, $town)
     {
+        // Soap call with params.
         $getUKLocationByTownRequest = new \stdClass;
         $getUKLocationByTownRequest->Town = $town;
         $soapResponse = $soapClient->soapCall('GetUKLocationByTown', [$getUKLocationByTownRequest]);
+
+        // Parse response for PostCode
         preg_match_all("'&lt;PostCode&gt;(.*?)&lt;/PostCode&gt;'si", $soapResponse->getContent(), $postcodeMatch);
+
         return $postcodeMatch[1];
     }
 
